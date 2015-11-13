@@ -159,11 +159,6 @@ function ifCond(v1, operator, v2, options) {
 function load() {
     Handlebars.registerHelper('ifCond', ifCond);
 
-    console.log(url(""));
-    console.log(url("?query"));
-    console.log(url("?events"));
-    console.log(url("events"));
-
     var cskeeters = new Gh3.User("cskeeters"); // You need a user first
 
     var test = new Gh3.Repository("test", cskeeters);
@@ -249,9 +244,13 @@ function populateIssues(issues) {
         issue.status = get_status(issue)
         if (issue.comments > 0) {
             promises.push(loadComments(issue));
+        } else {
+            issue.comments = []
         }
-        if (url("events")) {
+        if (url("?events")) {
             promises.push(loadEvents(issue));
+        } else {
+            issue.events = []
         }
     }
 
@@ -261,7 +260,7 @@ function populateIssues(issues) {
     $.when.apply($, promises).then(function(data) {
         for (var i=0; i<issues.length; i++) {
             var issue = issues[i];
-            if (url("events")) {
+            if (url("?events")) {
                 issue.ce = combine_comments_and_events(issue.comments, issue.events);
             } else {
                 issue.ce = issue.comments

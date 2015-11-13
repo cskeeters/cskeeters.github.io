@@ -82,6 +82,10 @@
         font-size:2em;
         margin-bottom:1em;
     }
+    .title a {
+        color:#000;
+        text-decoration:none;
+    }
     .issue {
         page-break-inside: avoid;
     }
@@ -130,6 +134,9 @@
     .comment {
         font-weight:bold;
     }
+    #links {
+        margin-top:50px;
+    }
 </style>
 <script>
 function ifCond(v1, operator, v2, options) {
@@ -163,6 +170,14 @@ function load() {
 
     var test = new Gh3.Repository("test", cskeeters);
 
+    var index = window.location.href.indexOf("?");
+    var href = window.location.href.substring(0, index);
+    if (url("?events")) {
+        //add link without events
+        $("#title").append('<a href="'+href+'">Open SPR Report by Priority</a>');
+    } else {
+        $("#title").append('<a href="'+href+'?events=1">Open SPR Report by Priority</a>');
+    }
     test.fetch(function (err, res) {
         if(err) { throw "outch ..." }
 
@@ -231,6 +246,9 @@ function loadEvents(issue) {
     return dfd.promise();
 }
 
+function log_progress(progress) {
+    console.log(progress);
+}
 
 function populateIssues(issues) {
     var source   = $("#issue-template").html();
@@ -243,12 +261,16 @@ function populateIssues(issues) {
         issue.severity = get_severity(issue)
         issue.status = get_status(issue)
         if (issue.comments > 0) {
-            promises.push(loadComments(issue));
+            var promise = loadComments(issue);
+            promise.progress(log_progress);
+            promises.push(promise);
         } else {
             issue.comments = []
         }
         if (url("?events")) {
-            promises.push(loadEvents(issue));
+            var promise = loadEvents(issue);
+            promise.progress(log_progress);
+            promises.push(promise);
         } else {
             issue.events = []
         }
@@ -275,7 +297,7 @@ function populateIssues(issues) {
 </script>
 </head>
 <body onload="load()">
-    <div class="title">Open SPR Report by Priority</div>
+    <div id="title" class="title"></div>
 
     <div id="issues"></div>
 </body>

@@ -1,0 +1,21 @@
+<div class="issue">
+    <h1 class="summary">
+        <span class="id">SPR-{{number}}</span> {{title}}
+    </h1>
+    <div class="right">
+        <div class="severity">
+            <span class="label">Severity:</span> {{severity}}
+        </div>
+        <div class="status">
+            <span class="label">Status:</span> {{status}}
+        </div>
+    </div>
+    <div class="originator">
+        <span class="label">Reported:</span> {{created_at}}
+        <span class="label">By:</span> {{user.login}}
+    </div>
+
+    <div class="body">
+        {{body}}
+    </div>
+</div>

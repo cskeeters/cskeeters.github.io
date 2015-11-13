@@ -159,6 +159,11 @@ function ifCond(v1, operator, v2, options) {
 function load() {
     Handlebars.registerHelper('ifCond', ifCond);
 
+    console.log(url(""));
+    console.log(url("?query"));
+    console.log(url("?events"));
+    console.log(url("events"));
+
     var cskeeters = new Gh3.User("cskeeters"); // You need a user first
 
     var test = new Gh3.Repository("test", cskeeters);

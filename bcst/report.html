@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Open SPR Report by Priority</title>
+<script src="js/bcst.js"></script>
+<script src="bower_components/gh3/gh3.js"></script>
+<script src="bower_components/gh3/vendors/async.js"></script>
+<script src="bower_components/gh3/vendors/jquery-2.1.0.min.js"></script>
+<script src="bower_components/js-url/url.js"></script>
+<script src="bower_components/underscore/underscore.js"></script>
+<script src="bower_components/handlebars/handlebars.js"></script>
+<!-- http://blog.stevenlevithan.com/archives/date-time-format -->
+<script src="bower_components/date-steroids/dist/date.js"></script>
+<style id="issue-template" type="text/x-handlebars-template">
+    <div class="issue">
+        <h1 class="summary">
+            <a href="https://github.com/cskeeters/test/issues/{{number}}"><span class="id">SPR-{{number}}</span> {{title}}</a>
+        </h1>
+        <div class="right">
+            <div class="severity">
+                <span class="label">Severity:</span> {{severity}}
+            </div>
+            <div class="status">
+                <span class="label">Status:</span> {{status}}
+            </div>
+        </div>
+        <div class="originator">
+            <span class="label">Reported:</span> {{reported}}
+            <span class="label">By:</span> {{user.login}}
+        </div>
+
+        {{~#if assignee}}
+            <div class="assignee">
+                <span class="label">Assignee:</span> {{assignee.login}}
+            </div>
+        {{~/if~}}
+
+        <div class="labels">
+            <span class="label">Labels:</span> 
+            {{#each labels}}
+                {{~#ifLabel name}}
+                    {{name}}
+                {{~/ifLabel~}}
+            {{/each}}
+        </div>
+        {{~#if milestone}}
+            <div class="milestone">
+                <span class="label">Milestone:</span> {{milestone.title}}
+            </div>
+        {{~/if~}}
+
+        <div class="body">
+            {{body}}
+        </div>
+
+        {{#each ce}}
+            {{~#if event}}
+                <div class="event">
+                {{~#ifCond event '==' 'labeled'}}
+                    <span class="date">{{added}}</span> <span class="user">{{actor.login}}</span> {{event}} {{label.name}}
+                {{~/ifCond~}}
+                </div>
+            {{else}}
+                <div class="comment">
+                    <span class="date">{{added}}</span> <span class="user">{{user.login}}</span> - {{body}}
+                </div>
+            {{~/if~}}
+        {{/each}}
+    </div>
+</style>
+<style>
+    body {
+        font-family:Arial;
+        font-size:10pt;
+        margin:30px;
+    }
+    h1 {
+        font-size:1.3em;
+        margin-top:3em;
+        margin-bottom:0em;
+    }
+    .title {
+        font-family:impact;
+        font-size:2em;
+        margin-bottom:1em;
+    }
+    .title a {
+        color:#000;
+        text-decoration:none;
+    }
+    .issue {
+        page-break-inside: avoid;
+    }
+    .issue DIV {
+        margin-bottom:4px;
+    }
+    .issue DIV span.label {
+        font-weight:normal;
+        font-style:italic;
+    }
+    .issue .right {
+        float:right;
+        text-align:right;
+    }
+    .issue a {
+        text-decoration:none;
+        color: #000;
+    }
+    .issue .summary,
+    .issue .severity,
+    .issue .status,
+    .issue .originator,
+    .issue .assignee,
+    .issue .milestone,
+    .issue .labels {
+        font-weight:bold;
+    }
+    .issue .labels {
+        /*display:none;*/
+    }
+    .issue .event {
+        /*display:none;*/
+    }
+    .body {
+        margin:20px;
+    }
+    .comment, .event {
+        margin:20px;
+    }
+    .comment .date,
+    .event .date {
+        font-style:italic;
+        font-weight:normal;
+    }
+    .comment .user,
+    .event .user {
+        font-style:italic;
+        font-weight:normal;
+    }
+    .comment {
+        font-weight:bold;
+    }
+    #links {
+        margin-top:50px;
+    }
+</style>
+<script>
+function ifCond(v1, operator, v2, options) {
+
+    switch (operator) {
+        case '==':
+            return (v1 == v2) ? options.fn(this) : options.inverse(this);
+        case '===':
+            return (v1 === v2) ? options.fn(this) : options.inverse(this);
+        case '<':
+            return (v1 < v2) ? options.fn(this) : options.inverse(this);
+        case '<=':
+            return (v1 <= v2) ? options.fn(this) : options.inverse(this);
+        case '>':
+            return (v1 > v2) ? options.fn(this) : options.inverse(this);
+        case '>=':
+            return (v1 >= v2) ? options.fn(this) : options.inverse(this);
+        case '&&':
+            return (v1 && v2) ? options.fn(this) : options.inverse(this);
+        case '||':
+            return (v1 || v2) ? options.fn(this) : options.inverse(this);
+        default:
+            return options.inverse(this);
+    }
+}
+function ifLabel(condition, options) {
+    if ($.inArray(condition, ["priority"]) >= 0) {
+        return options.fn(this);
+    }
+    return options.inverse(this);
+}
+
+function load() {
+    Handlebars.registerHelper('ifCond', ifCond);
+    Handlebars.registerHelper('ifLabel', ifLabel);
+
+    var cskeeters = new Gh3.User("cskeeters"); // You need a user first
+
+    var test = new Gh3.Repository("test", cskeeters);
+
+    var index = window.location.href.indexOf("?");
+    var href = window.location.href.substring(0, index);
+    if (url("?events")) {
+        //add link without events
+        $("#title").html('<a href="'+href+'">Open SPR Report by Priority</a>');
+    } else {
+        $("#title").html('<a href="'+href+'?events=1">Open SPR Report by Priority</a>');
+    }
+    test.fetch(function (err, res) {
+        if(err) { throw "outch ..." }
+
+        //console.log(test);
+
+        test.fetchIssues(function (err, res) {
+            if (err) { throw "outch ..." }
+
+            //console.log("Array of issues :", test.getIssues());
+
+            populateIssues(test.getIssues());
+        })
+    });
+}
+
+function loadComments(issue) {
+    var dfd = $.Deferred();
+
+    issue.fetchComments(function (err, res) {
+        if (err) { 
+            dfd.reject("Error loading comments for issue "+issue.number);
+        }
+
+        for (var j=0; j<issue.comments.length; j++) {
+            var comment = issue.comments[j];
+            comment.added = new Date(comment.created_at).format("dd-mmm-yyyy");
+        }
+
+        dfd.resolve("comments loaded for issue "+issue.number);
+    });
+ 
+    // Show a "working..." message every half-second
+    setTimeout(function working() {
+        if ( dfd.state() === "pending" ) {
+            dfd.notify("loading comments for issue "+issue.number);
+            setTimeout(working, 500);
+        }
+    }, 1);
+ 
+  return dfd.promise();
+}
+
+function loadEvents(issue) {
+    var dfd = $.Deferred();
+
+    issue.fetchEvents(function (err, res) {
+        if (err) {
+            dfd.reject("Error loading comments for issue "+issue.number);
+        }
+
+        for (var k=0; k<issue.events.length; k++) {
+            var ev = issue.events[k];
+            ev.added = new Date(ev.created_at).format("dd-mmm-yyyy");
+        }
+        dfd.resolve("events loaded for issue "+issue.number);
+    });
+
+    // Show a "working..." message every half-second
+    setTimeout(function working() {
+        if (dfd.state() === "pending") {
+            dfd.notify("loading events for issue "+issue.number);
+            setTimeout(working, 500);
+        }
+    }, 1);
+
+    return dfd.promise();
+}
+
+function log_progress(progress) {
+    console.log(progress);
+}
+
+function populateIssues(issues) {
+    var source   = $("#issue-template").html();
+    var template = Handlebars.compile(source);
+    var promises = [];
+
+    for (var i=0; i<issues.length; i++) {
+        var issue = issues[i];
+        issue.reported = new Date(issue.created_at).format("dd-mmm-yyyy");
+        issue.severity = get_severity(issue)
+        issue.status = get_status(issue)
+        if (issue.comments > 0) {
+            var promise = loadComments(issue);
+            promise.progress(log_progress);
+            promises.push(promise);
+        } else {
+            issue.comments = []
+        }
+        if (url("?events")) {
+            var promise = loadEvents(issue);
+            promise.progress(log_progress);
+            promises.push(promise);
+        } else {
+            issue.events = []
+        }
+    }
+
+    //This ensures that safety of flight issues are listed first and so on.
+    issues = issues.sort(issue_cmp);
+
+    $.when.apply($, promises).then(function(data) {
+        for (var i=0; i<issues.length; i++) {
+            var issue = issues[i];
+            if (url("?events")) {
+                issue.ce = combine_comments_and_events(issue.comments, issue.events);
+            } else {
+                issue.ce = issue.comments
+            }
+            $("#issues").append(template(issue));
+        }
+    }, function(data) {
+        console.log("Error "+data);
+    });
+}
+
+</script>
+</head>
+<body onload="load()">
+    <div id="title" class="title"></div>
+
+    <div id="issues"></div>
+</body>
+</html>

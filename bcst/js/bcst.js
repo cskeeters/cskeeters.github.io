@@ -1,24 +1,23 @@
 
 function assign_order(issue) {
-    if (is_labeled(issue, "suspended")) return 6;
+    if (is_labeled(issue, "suspended")) return 7;
 
     if (is_labeled(issue, "safety")) return 1;
     if (is_labeled(issue, "tested_passed")) return 2;
-    if (is_labeled(issue, "priority")) return 3;
+    if (is_labeled(issue, "completed")) return 3;
+    if (is_labeled(issue, "priority")) return 4;
     if (is_labeled(issue, "training")) {
         if (!is_labeled(issue, "workaround")) {
-            return 4;
-        } else {
             return 5;
+        } else {
+            return 6;
         }
     }
-    return 7;
+    return 8;
 }
 function issue_cmp(i1, i2) {
     var o1 = assign_order(i1);
     var o2 = assign_order(i2);
-    console.log("Issue "+i1.number+" was given order # "+o1);
-    console.log("Issue "+i2.number+" was given order # "+o2);
     if (o1 < o2) return -1;
     if (o1 > o2) return 1;
     if (i1.number < i2.number) return -1;
@@ -48,6 +47,22 @@ function combine_comments_and_events(comments, events) {
     var ce = comments.concat(events);
     ce.sort(created_at_cmp);
     return ce;
+}
+
+function get_severity_num(issue) {
+    if (is_labeled(issue, 'safety')) {
+        return 1;
+    }
+    if (is_labeled(issue, 'training') && ! is_labeled(issue, 'workaround')) {
+        return 2;
+    }
+    if (is_labeled(issue, 'training')) {
+        return 3;
+    }
+    if (is_labeled(issue, 'enhancement')) {
+        return 5;
+    }
+    return 4;
 }
 
 function get_severity(issue) {

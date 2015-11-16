@@ -690,6 +690,22 @@
 
 	},{});
 
+    Gh3.Milesone = Kind.extend({
+        constructor : function (number, ghUser, repositoryName, infos) {
+			if (number) this.number = number;
+
+			if (ghUser) this.user = ghUser;
+			if (repositoryName) this.repositoryName = repositoryName;
+
+			if (infos) {
+				for(var prop in infos) {
+					this[prop] = infos[prop];
+				}
+			}
+        }
+        //may want to fetch issues associated with milestone
+    }, {});
+
 	Gh3.Issue = Kind.extend({
 		constructor : function (number, ghUser, repositoryName, infos) {
 			if (number) this.number = number;
@@ -851,6 +867,26 @@
 			});
 
 		},
+		fetchMilestones : function (callback) {
+			var that = this;
+			that.milestones = [];
+
+			Gh3.Helper.callHttpApi({
+				service : "repos/"+that.user.login+"/"+that.name+"/milestones",
+				data : {sort: "updated"},
+				success : function(res) {
+					_.each(res.data, function (milestone) {
+						that.milestones.push(new Gh3.Milesone(milestone.number, that.user, that.name, milestone));
+					});
+
+					if (callback) callback(null, that);
+				},
+				error : function (res) {
+					if (callback) callback(new Error(res.responseJSON.message),res);
+				}
+			});
+
+		},
 		getBranches : function () { return this.branches; },
 		getBranchByName : function (name) {
 			return _.find(this.branches, function (branch) {
@@ -880,7 +916,8 @@
 		},
 		reverseIssues : function () {
 			this.issues.reverse();
-		}
+		},
+		getMilestones : function () { return this.milestones; }
 
 	},{});
 

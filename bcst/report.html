@@ -168,8 +168,9 @@ function ifCond(v1, operator, v2, options) {
             return options.inverse(this);
     }
 }
+
 function ifLabel(condition, options) {
-    if ($.inArray(condition, ["priority"]) >= 0) {
+    if ($.inArray(condition, ["priority", "doghouse", "sideshow"]) >= 0) {
         return options.fn(this);
     }
     return options.inverse(this);
@@ -181,7 +182,7 @@ function load() {
 
     var cskeeters = new Gh3.User("cskeeters"); // You need a user first
 
-    var test = new Gh3.Repository("test", cskeeters);
+    var repo = new Gh3.Repository("test", cskeeters);
 
     var index = window.location.href.indexOf("?");
     var href = window.location.href.substring(0, index);
@@ -191,17 +192,17 @@ function load() {
     } else {
         $("#title").html('<a href="'+href+'?events=1">Open SPR Report by Priority</a>');
     }
-    test.fetch(function (err, res) {
+    repo.fetch(function (err, res) {
         if(err) { throw "outch ..." }
 
-        //console.log(test);
+        //console.log(repo);
 
-        test.fetchIssues(function (err, res) {
+        repo.fetchIssues(function (err, res) {
             if (err) { throw "outch ..." }
 
-            //console.log("Array of issues :", test.getIssues());
+            //console.log("Array of issues :", repo.getIssues());
 
-            populateIssues(test.getIssues());
+            populateIssues(repo.getIssues());
         })
     });
 }

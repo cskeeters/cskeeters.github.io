@@ -25,6 +25,14 @@ function issue_cmp(i1, i2) {
     return 0;
 }
 
+function get_labels(issue) {
+    var labels = "";
+    for (var i=0; i<issue.labels.length; i++) {
+        labels += issue.labels[i].name+" ";
+    }
+    return labels.trim();
+}
+
 function is_labeled(issue, target_label) {
     for (var i=0; i<issue.labels.length; i++) {
         var label = issue.labels[i];

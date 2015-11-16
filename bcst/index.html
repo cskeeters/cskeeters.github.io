@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BCS-T Issues</title>
 <script src="js/bcst.js"></script>
 <script src="bower_components/gh3/gh3.js"></script>
@@ -11,42 +12,98 @@
 <script src="bower_components/handlebars/handlebars.js"></script>
 <!-- http://blog.stevenlevithan.com/archives/date-time-format -->
 <script src="bower_components/date-steroids/dist/date.js"></script>
+<link rel="stylesheet" href="bower_components/normalize-css/normalize.css">
+<link rel="stylesheet" href="bower_components/gridism/gridism.css">
+<link href='http://fonts.googleapis.com/css?family=Roboto+Condensed:normal|Open+Sans:300italic,400italic,700italic,400,300,700' rel='stylesheet' type='text/css'>
+<style id="issue-template" type="text/x-handlebars-template">
+    <div class="issue">
+        <a href="https://github.com/cskeeters/test/issues?q=is%3Aopen+assignee%3A{{assignee.login}}">
+            <img width="30" src="{{assignee.avatar_url}}"/>
+        </a>
+        <a href="https://github.com/cskeeters/test/issues/{{number}}">SPR-{{number}} {{title}}</a>
+
+        {{#each labels}}
+            {{~#ifLabel name}}
+                <span class="label" style="background-color:#{{color}}">{{name}}</span>
+            {{~/ifLabel~}}
+        {{/each}}
+    </div>
+</style>
+<style id="milestone-template" type="text/x-handlebars-template">
+    <a href="https://github.com/cskeeters/test/milestones/{{title}}">{{title}}</a>
+</style>
 <style>
     body {
-        font-family:Arial;
-        font-size:10pt;
-        margin:30px;
+        font-family:"Open Sans", "Helvetica Neue", Helvetica, sans-serif;
+        font-size:12pt;
+        color:#444;
+    }
+    a {
+        color: rgb(51, 152, 181);
+        text-decoration:none;
     }
     h1 {
         font-size:1.3em;
         margin-top:3em;
         margin-bottom:0em;
     }
+    .title,h1,h2 {
+        font-family:"Roboto Condensed",Impact;
+    }
     .title {
-        font-family:Impact;
         font-size:2em;
         margin-bottom:1em;
-    }
-    h1,h2 {
-        font-family:Impact;
+        text-align:center;
     }
     #links a {
         display:block;
+    }
+    #milestones a {
+        display:block;
+    }
+    #issues a {
+        text-decoration:none;
+    }
+    .issue {
+        margin:5px;
+        height:35px;
+    }
+    .issue img {
+        vertical-align:middle;
+        border:0px;
+        margin-right:10px;
+    }
+    .label {
+        border-radius:2px;
+        padding:1px 3px 2px 3px;
+        color:#fff;
+        font-size:.8em;
+        font-family:verdana;
+        text-shadow: 1px 1px #666;
+    }
+    #issues a.safety {
+        color: #FF4C0A;
     }
 </style>
 <script>
 function load() {
     var cskeeters = new Gh3.User("cskeeters"); // You need a user first
-    var test = new Gh3.Repository("test", cskeeters);
+    var repo = new Gh3.Repository("test", cskeeters);
 
-    test.fetch(function (err, res) {
+    repo.fetch(function (err, res) {
         if(err) { throw "outch ..." }
 
-        //console.log(test);
+        //console.log(repo);
 
-        test.fetchIssues(function (err, res) {
+        repo.fetchIssues(function (err, res) {
             if (err) { throw "outch ..." }
-            populateStats(test.getIssues());
+            populateStats(repo.getIssues());
+            populateIssues(repo.getIssues());
+        })
+        repo.fetchMilestones(function (err, res) {
+            if (err) { throw "outch ..." }
+            //console.log(repo.getMilestones());
+            populateMilestones(repo.getMilestones());
         })
     });
 }
@@ -67,28 +124,80 @@ function populateStats(issues) {
     $("#enhancement").html(counts[4]);
 }
 
+function ifLabel(condition, options) {
+    if ($.inArray(condition, ["safety", "training", "workaround", "priority", "suspended", "doghouse", "sideshow"]) >= 0) {
+        return options.fn(this);
+    }
+    return options.inverse(this);
+}
+
+function populateIssues(issues) {
+    Handlebars.registerHelper('ifLabel', ifLabel);
+
+    var source   = $("#issue-template").html();
+    var template = Handlebars.compile(source);
+
+    issues = issues.sort(issue_cmp);
+    for (var i=0; i<issues.length; i++) {
+        var issue = issues[i];
+        console.log(get_labels(issue));
+        $("#issues").append(template(issue));
+    }
+}
+
+function populateMilestones(milestones) {
+    var source   = $("#milestone-template").html();
+    var template = Handlebars.compile(source);
+
+    for (var i=0; i<milestones.length; i++) {
+        var milestone = milestones[i];
+        $("#milestones").append(template(milestone));
+    }
+}
+
 </script>
 </head>
-<body onload="load()">
-    <div id="title" class="title">BCS-T Issues</div>
+<body class="wrap wider" onload="load()">
 
-    <div>
-        <em>Total Open SPRs</em> <span id="open"></span>
+    <div class="grid">
+        <div id="title" class="title unit whole">BCS-T Issues</div>
     </div>
 
-    <h2>Open SPRs by Severity</h2>
-    <div><em>Safety of Flight</em> <span id="safety"></span></div>
-    <div><em>No Work Around</em> <span id="training"></span></div>
-    <div><em>Work Around</em> <span id="workaround"></span></div>
-    <div><em>No Impact</em> <span id="noimpact"></span></div>
-    <div><em>Enhancement</em> <span id="enhancement"></span></div>
+    <div class="grid">
 
-    <div id="links">
-        <h2>Links</h2>
+        <div class="unit two-thirds">
+            <div id="issues">
+            </div>
+        </div>
 
-        <a href="report.html">Open SPRs by Priority</a>
-        <a href="https://github.com/cskeeters/test/issues?q=is%3Aopen+assignee%3Acskeeters">Assigned to Chad</a>
-        <a href="https://github.com/cskeeters/test/issues?q=milestone%3A%22Release+22%22+">Release 22</a>
-    </div>
+        <div class="unit one-third">
+
+            <div id="counts">
+                <h2>Open Counts</h2>
+                <div><em>Total:</em> <span id="open"></span></div>
+                <div><em>Safety of Flight:</em> <span id="safety"></span></div>
+                <div><em>No Work Around:</em> <span id="training"></span></div>
+                <div><em>Work Around:</em> <span id="workaround"></span></div>
+                <div><em>No Impact:</em> <span id="noimpact"></span></div>
+                <div><em>Enhancement:</em> <span id="enhancement"></span></div>
+            </div>
+
+            <div id="links">
+                <h2>Links</h2>
+
+                <a href="report.html">Open SPRs by Priority</a>
+                <a href="https://github.com/cskeeters/test/issues?q=is%3Aopen">All Open SPRs</a>
+            </div>
+
+            <div id="Milestones">
+                <h2>Milestones</h2>
+
+                <div id="milestones"/>
+            </div>
+
+        </div>
+
+    </div> <!--grid-->
+
 </body>
 </html>

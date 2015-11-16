@@ -1,0 +1,24 @@
+.color-primary-0 { color: #236A62 }
+.color-primary-1 { color: #6A9E99 }
+.color-primary-2 { color: #42847D }
+.color-primary-3 { color: #0D4F48 }
+.color-primary-4 { color: #00352F }
+
+body {
+    font-family:"Open Sans";
+    font-size:12pt;
+}
+
+.solidbg {
+    background-color:#111;
+    color:#FFF;
+}
+
+.solidbg a {
+    color:#FFF;
+}
+
+.virtlinks a {
+    display:block;
+}
+

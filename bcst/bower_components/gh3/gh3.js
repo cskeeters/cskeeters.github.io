@@ -248,6 +248,9 @@
 		domain : "api.github.com",
 		callHttpApi : function (apiParams) {
 			apiParams.url = Gh3.Helper.protocol + "://" + Gh3.Helper.domain + "/" + apiParams.service;
+			if (Gh3.username) {
+				apiParams.headers = { Authorization: 'Basic ' + btoa(Gh3.username+':'+Gh3.password) }
+			}
 			if ($.support.cors) {
 				var success = apiParams.success
 				if ($.isFunction(success)) {

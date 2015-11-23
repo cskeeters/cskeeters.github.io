@@ -1,6 +1,6 @@
 
 function assign_order(issue) {
-    if (is_labeled(issue, "suspended")) return 7;
+    if (!is_labeled(issue, "approved")) return 7;
 
     if (is_labeled(issue, "safety")) return 1;
     if (is_labeled(issue, "tested_passed")) return 2;
@@ -93,10 +93,7 @@ function get_status(issue) {
     if (is_labeled(issue, 'tested_passed')) {
         return "Tested Passed"
     }
-    if (is_labeled(issue, 'pending')) {
-        return "Pending"
-    }
-    if (is_labeled(issue, 'suspended')) {
+    if (!is_labeled(issue, 'approved')) {
         return "Suspended"
     }
     if (is_labeled(issue, 'completed')) {

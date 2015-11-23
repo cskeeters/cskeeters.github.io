@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8" /> 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BCS-T Issues</title>
 <script src="js/bcst.js"></script>
@@ -18,13 +19,21 @@
 <style id="issue-template" type="text/x-handlebars-template">
     <div class="issue">
         <a href="https://github.com/cskeeters/test/issues?q=is%3Aopen+assignee%3A{{assignee.login}}">
-            <img width="30" src="{{assignee.avatar_url}}"/>
+            {{~#if assignee.avatar_url}}
+                <img width="30" src="{{assignee.avatar_url}}"/>
+            {{else}}
+                <div style="display:inline-block;width:30px;margin-right:10px"></div>
+            {{~/if}}
         </a>
         <a href="https://github.com/cskeeters/test/issues/{{number}}">SPR-{{number}} {{title}}</a>
 
         {{#each labels}}
             {{~#ifLabel name}}
-                <span class="label" style="background-color:#{{color}}">{{name}}</span>
+                {{~#ifLabelLight color}}
+                    <span class="label light" style="background-color:#{{color}}">{{name}}</span>
+                {{else}}
+                    <span class="label" style="background-color:#{{color}}">{{name}}</span>
+                {{~/ifLabelLight~}}
             {{~/ifLabel~}}
         {{/each}}
     </div>
@@ -61,7 +70,7 @@
     #milestones a {
         display:block;
     }
-    #issues a {
+    #tested-passed-issues a, #completed-issues a, #approved-issues a, #validated-issues a, #new-issues a {
         text-decoration:none;
     }
     .issue {
@@ -79,33 +88,86 @@
         color:#fff;
         font-size:.8em;
         font-family:verdana;
-        text-shadow: 1px 1px #666;
+        /*text-shadow: 1px 1px #666;*/
     }
-    #issues a.safety {
-        color: #FF4C0A;
+    .light {
+        color:#000;
+        /*text-shadow: 1px 1px #fff;*/
     }
+    #login {
+        float:right;
+        font-size:.8em;
+    }
+    #login input[type="text"],
+    #login input[type="password"] {
+        padding: 2px;
+        border: none;
+        border-bottom: solid 2px #c9c9c9;
+        transition: border 0.3s;
+    }
+    #login input[type="text"]:focus,
+    #login input[type="password"]:focus {
+        border-bottom: solid 2px #969696;
+    }
+
 </style>
 <script>
-function load() {
+function populate() {
     var cskeeters = new Gh3.User("cskeeters"); // You need a user first
     var repo = new Gh3.Repository("test", cskeeters);
 
     repo.fetch(function (err, res) {
-        if(err) { throw "outch ..." }
+        if(err) {
+            //If the credentials are bad, this will be the first error
+            alert("Error loading repository.  Check your credentials.")
+            throw "Error getting repository"
+        }
 
         //console.log(repo);
 
         repo.fetchIssues(function (err, res) {
-            if (err) { throw "outch ..." }
+            if (err) { throw "Error fetching issues" }
             populateStats(repo.getIssues());
             populateIssues(repo.getIssues());
         })
         repo.fetchMilestones(function (err, res) {
-            if (err) { throw "outch ..." }
+            if (err) { throw "Error fetching milestones" }
             //console.log(repo.getMilestones());
             populateMilestones(repo.getMilestones());
         })
     });
+}
+
+function load() {
+    $("#password").keyup(function(event){
+        if(event.keyCode == 13){
+            $("#login-button").click();
+        }
+    });
+
+    if(typeof(Storage) !== "undefined") {
+        // Code for localStorage/sessionStorage.
+        if ((sessionStorage.gh_username !== undefined) && 
+            (sessionStorage.gh_username != "") &&
+            (sessionStorage.gh_password !== undefined) &&
+            (sessionStorage.gh_password != "")) {
+             $("#username").val(sessionStorage.gh_username);
+            Gh3.username=sessionStorage.gh_username
+            Gh3.password=sessionStorage.gh_password
+            populate();
+        }
+    } else {
+        alert("Sorry, your browser does not support the local storage necessary for this page to work.");
+    }
+}
+
+function login() {
+    sessionStorage.gh_username = $("#username").val();
+    sessionStorage.gh_password = $("#password").val();
+
+    Gh3.username=sessionStorage.gh_username
+    Gh3.password=sessionStorage.gh_password
+    populate();
 }
 
 function populateStats(issues) {
@@ -125,14 +187,42 @@ function populateStats(issues) {
 }
 
 function ifLabel(condition, options) {
-    if ($.inArray(condition, ["safety", "training", "workaround", "priority", "suspended", "doghouse", "sideshow"]) >= 0) {
+    if ($.inArray(condition, ["safety", "training", "workaround", "priority", "doghouse", "sideshow"]) >= 0) {
         return options.fn(this);
     }
     return options.inverse(this);
 }
 
+function ifLabelLight(color, options) {
+    var color_re = new RegExp("#?([0-9a-f]{3,6})", "i")
+    var match = color_re.exec(color);
+    if (match) {
+        if (match[1].length == 3) {
+            var r = parseInt(match[1].charAt(0), 16)*16
+            var g = parseInt(match[1].charAt(1), 16)*16
+            var b = parseInt(match[1].charAt(2), 16)*16
+        } else if (match[1].length == 6) {
+            var r = parseInt(match[1].substring(0,2), 16)
+            var g = parseInt(match[1].substring(2,4), 16)
+            var b = parseInt(match[1].substring(4,6), 16)
+        } else {
+            console.error("Invalid color length "+color)
+            return options.inverse(this);
+        }
+        if (r+g+b > 400) {
+            return options.fn(this);
+        } else {
+            return options.inverse(this);
+        }
+    } else {
+        console.error(color+" did not match color regexp")
+        return options.inverse(this);
+    }
+}
+
 function populateIssues(issues) {
     Handlebars.registerHelper('ifLabel', ifLabel);
+    Handlebars.registerHelper('ifLabelLight', ifLabelLight);
 
     var source   = $("#issue-template").html();
     var template = Handlebars.compile(source);
@@ -140,8 +230,20 @@ function populateIssues(issues) {
     issues = issues.sort(issue_cmp);
     for (var i=0; i<issues.length; i++) {
         var issue = issues[i];
-        console.log(get_labels(issue));
-        $("#issues").append(template(issue));
+        //console.log(get_labels(issue));
+        if (is_labeled(issue, "tested_passed")) {
+            $("#tested-passed-issues").append(template(issue));
+        } else if (is_labeled(issue, "completed")) {
+            $("#completed-issues").append(template(issue));
+        } else if (is_labeled(issue, "validated")) {
+            if (is_labeled(issue, "approved")) {
+                $("#approved-issues").append(template(issue));
+            } else {
+                $("#validated-issues").append(template(issue));
+            }
+        } else {
+            $("#new-issues").append(template(issue));
+        }
     }
 }
 
@@ -160,13 +262,36 @@ function populateMilestones(milestones) {
 <body class="wrap wider" onload="load()">
 
     <div class="grid">
+        <div id="login" class="unit half">
+            Username:
+            <input type="text" size="10" id="username"/>
+            Password:
+            <input type="password" size="14" id="password"/>
+            <input type="button" id="login-button" value="login" onclick="login()"/>
+        </div>
+    </div>
+
+    <div class="grid">
         <div id="title" class="title unit whole">BCS-T Issues</div>
     </div>
 
     <div class="grid">
 
         <div class="unit two-thirds">
-            <div id="issues">
+            <div id="tested-passed-issues">
+                <h2>Tested-Passed Issues</h2>
+            </div>
+            <div id="completed-issues">
+                <h2>Completed Issues</h2>
+            </div>
+            <div id="approved-issues">
+                <h2>Approved Issues</h2>
+            </div>
+            <div id="validated-issues">
+                <h2>Validated Issues</h2>
+            </div>
+            <div id="new-issues">
+                <h2>New Issues</h2>
             </div>
         </div>
 

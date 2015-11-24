@@ -251,6 +251,9 @@
 			if (Gh3.username) {
 				apiParams.headers = { Authorization: 'Basic ' + btoa(Gh3.username+':'+Gh3.password) }
 			}
+			if (Gh3.access_token) {
+				apiParams.headers = { Authorization: 'token ' + Gh3.access_token}
+			}
 			if ($.support.cors) {
 				var success = apiParams.success
 				if ($.isFunction(success)) {

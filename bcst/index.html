@@ -17,12 +17,12 @@
 <link rel="stylesheet" href="bower_components/gridism/gridism.css">
 <link href='http://fonts.googleapis.com/css?family=Roboto+Condensed:normal|Open+Sans:300italic,400italic,700italic,400,300,700' rel='stylesheet' type='text/css'>
 <style id="login-form" type="text/x-handlebars-template">
-    {{~#if username}}
+    {{~#if loggedIn}}
         Logged in as: {{username}}
         <input type="button" id="login-button" value="logout" onclick="logout()"/>
     {{else}}
         Username:
-        <input type="text" size="10" id="username"/>
+        <input type="text" size="10" id="username" value="{{username}}"/>
         Password:
         <input type="password" size="14" id="password" onkeyup="passwordKeyUp(event)"/>
         <input type="button" id="login-button" value="login" onclick="login()"/>
@@ -158,9 +158,9 @@ function populate() {
 function showLogin() {
     var template = Handlebars.compile($("#login-form").html());
     if (sessionStorage.gh_password) {
-        $("#login").html(template({username: localStorage.gh_username}));
+        $("#login").html(template({username: localStorage.gh_username, loggedIn:true}));
     } else {
-        $("#login").html(template());
+        $("#login").html(template({username: localStorage.gh_username}));
     }
 }
 
@@ -191,12 +191,12 @@ function load() {
 }
 
 function logout() {
+    localStorage.gh_username = ""
     sessionStorage.gh_password = ""
     Gh3.username=""
     Gh3.password=""
 
-    var template = Handlebars.compile($("#login-form").html());
-    $("#login").html(template());
+    showLogin();
     clear()
 }
 

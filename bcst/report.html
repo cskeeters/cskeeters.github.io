@@ -180,6 +180,10 @@ function load() {
     Handlebars.registerHelper('ifCond', ifCond);
     Handlebars.registerHelper('ifLabel', ifLabel);
 
+    //User has to have already logged in
+    Gh3.username=localStorage.gh_username
+    Gh3.password=sessionStorage.gh_password
+
     var cskeeters = new Gh3.User("cskeeters"); // You need a user first
 
     var repo = new Gh3.Repository("test", cskeeters);

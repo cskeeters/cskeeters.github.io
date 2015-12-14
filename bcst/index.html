@@ -277,6 +277,20 @@ function ifLabelLight(color, options) {
     }
 }
 
+function isTestedPassed(issue) {
+    if (is_labeled(issue, "sideshow")) {
+        if (!is_labeled(issue, "tested_passed_ss")) {
+            return false
+        }
+    }
+
+    if (is_labeled(issue, "tested_passed")) {
+        return true
+    }
+
+    return false
+}
+
 function populateIssues(issues) {
     Handlebars.registerHelper('ifLabel', ifLabel);
     Handlebars.registerHelper('ifLabelLight', ifLabelLight);
@@ -288,7 +302,7 @@ function populateIssues(issues) {
     for (var i=0; i<issues.length; i++) {
         var issue = issues[i];
         //console.log(get_labels(issue));
-        if (is_labeled(issue, "tested_passed")) {
+        if (isTestedPassed(issue)) {
             $("#tested-passed-issues").append(template(issue));
         } else if (is_labeled(issue, "completed")) {
             $("#completed-issues").append(template(issue));

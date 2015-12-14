@@ -89,8 +89,20 @@ function get_severity(issue) {
     return "4 - Defect - No Training Impact"
 }
 
+function is_tested_passed(issue) {
+    if (is_labeled(issue, "sideshow")) {
+        if (!is_labeled(issue, "tested_passed_ss")) {
+            return false
+        }
+    }
+    if (is_labeled(issue, "tested_passed")) {
+        return true
+    }
+    return false
+}
+
 function get_status(issue) {
-    if (is_labeled(issue, 'tested_passed')) {
+    if (is_tested_passed(issue)) {
         return "Tested Passed"
     }
     if (!is_labeled(issue, 'approved')) {

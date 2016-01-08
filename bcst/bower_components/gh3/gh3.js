@@ -853,6 +853,29 @@
 			});
 
 		},
+		createIssue : function (issue, callback) { //see how to refactor with Gh3.Dir
+			var that = this;
+			that.lastIssue = {};
+
+			Gh3.Helper.callHttpApi({
+				service : "repos/"+that.user.login+"/"+that.name+"/issues",
+				method : "POST",
+				data : JSON.stringify(issue),
+				contentType : "application/json",
+				processData : false,
+				success : function(res) {
+					console.log("response")
+					console.log(res)
+					console.log("response.data")
+					console.log(res.data)
+					if (callback) callback(null, res.data);
+				},
+				error : function (res) {
+					if (callback) callback(new Error(res.responseJSON.message),res);
+				}
+			});
+
+		},
 		fetchClosedIssues : function (callback) {
 			var that = this;
 			that.issues = [];

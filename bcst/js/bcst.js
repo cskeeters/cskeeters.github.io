@@ -3,7 +3,7 @@ function assign_order(issue) {
     if (!is_labeled(issue, "approved")) return 7;
 
     if (is_labeled(issue, "safety")) return 1;
-    if (is_labeled(issue, "tested_passed")) return 2;
+    if (is_labeled(issue, "tested_passed") || is_labeled(issue, "tested_passed_ss")) return 2;
     if (is_labeled(issue, "completed")) return 3;
     if (is_labeled(issue, "priority")) return 4;
     if (is_labeled(issue, "training")) {

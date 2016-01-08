@@ -74,6 +74,8 @@ function createSpr() {
     if ($("#training").is(":checked")) labels.push("training")
     if ($("#workaround").is(":checked")) labels.push("workaround")
     if ($("#priority").is(":checked")) labels.push("priority")
+    if ($("#doghouse").is(":checked")) labels.push("doghouse")
+    if ($("#sideshow").is(":checked")) labels.push("sideshow")
     issue["labels"] = labels
 
     repo.createIssue(issue, function created(err, newIssue) {
@@ -171,6 +173,16 @@ function load() {
                             <div>
                                 <input type="checkbox" id="priority" name="priority">
                                 <label for="priority">Priority</label>
+                            </div>
+
+                            <div>
+                                <input type="checkbox" id="doghouse" name="doghouse" checked>
+                                <label for="doghouse">Affects Doghouse</label>
+                            </div>
+
+                            <div>
+                                <input type="checkbox" id="sideshow" name="sideshow">
+                                <label for="sideshow">Affects Sideshow</label>
                             </div>
                         </td>
                     </tr>

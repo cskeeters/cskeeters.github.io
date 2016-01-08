@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BCS-T New SPR</title>
+<script src="js/bcst.js"></script>
+<script src="bower_components/gh3/gh3.js"></script>
+<script src="bower_components/gh3/vendors/async.js"></script>
+<script src="bower_components/gh3/vendors/jquery-2.1.0.min.js"></script>
+<script src="bower_components/js-url/url.js"></script>
+<script src="bower_components/underscore/underscore.js"></script>
+<script src="bower_components/handlebars/handlebars.js"></script>
+<!-- http://blog.stevenlevithan.com/archives/date-time-format -->
+<script src="bower_components/date-steroids/dist/date.js"></script>
+<link rel="stylesheet" href="bower_components/normalize-css/normalize.css">
+<link rel="stylesheet" href="bower_components/gridism/gridism.css">
+<link href='http://fonts.googleapis.com/css?family=Roboto+Condensed:normal|Open+Sans:300italic,400italic,700italic,400,300,700' rel='stylesheet' type='text/css'>
+<style id="login-form" type="text/x-handlebars-template">
+    {{~#if loggedIn}}
+        Logged in as: {{username}}
+        <input type="button" id="login-button" value="logout" onclick="logout()"/>
+    {{~/if}}
+</style>
+<style>
+    body {
+        font-family:"Open Sans", "Helvetica Neue", Helvetica, sans-serif;
+        font-size:12pt;
+        color:#444;
+    }
+    a {
+        color: rgb(51, 152, 181);
+        text-decoration:none;
+    }
+    h1 {
+        font-size:1.3em;
+        margin-top:3em;
+        margin-bottom:0em;
+    }
+    .title,h1,h2 {
+        font-family:"Roboto Condensed",Impact;
+    }
+    .title {
+        font-size:2em;
+        margin-bottom:1em;
+        text-align:center;
+    }
+    #login {
+        float:right;
+        font-size:.8em;
+    }
+
+    table.input td {
+        padding-bottom:2em;
+        padding-left:2em;
+    }
+
+    textarea, input[type="text"], input[type="password"] {
+        outline: none;
+    }
+
+</style>
+<script>
+function createSpr() {
+    var cskeeters = new Gh3.User("cskeeters"); // You need a user first
+    var repo = new Gh3.Repository("test", cskeeters);
+
+    var issue = {
+        title:$("#summary").val(),
+        body:$("#description").val(),
+    };
+    var labels = [];
+    if ($("#safety").is(":checked")) labels.push("safety")
+    if ($("#training").is(":checked")) labels.push("training")
+    if ($("#workaround").is(":checked")) labels.push("workaround")
+    if ($("#priority").is(":checked")) labels.push("priority")
+    issue["labels"] = labels
+
+    repo.createIssue(issue, function created(err, newIssue) {
+        if (err) {
+            //If the credentials are bad, this will be the first error
+            alert("Error loading repository.  Check your credentials.")
+            throw "Error getting repository"
+        }
+        alert("Created issue id:"+newIssue.number);
+        window.location.href="index.html"
+    });
+}
+
+
+function showLogin() {
+    var template = Handlebars.compile($("#login-form").html());
+    if (sessionStorage.gh_password) {
+        $("#login").html(template({username: localStorage.gh_username, loggedIn:true}));
+    } else {
+        alert("You are not logged in!");
+        window.location.href="index.html"
+    }
+}
+
+function logout() {
+    localStorage.gh_username = ""
+    sessionStorage.gh_password = ""
+    Gh3.username=""
+    Gh3.password=""
+
+    window.location.href="index.html"
+}
+
+function load() {
+    showLogin()
+
+    if(typeof(Storage) !== "undefined") {
+        // Code for localStorage/sessionStorage.
+        if ((localStorage.gh_username !== undefined) &&
+            (localStorage.gh_username != "") &&
+            (sessionStorage.gh_password !== undefined) &&
+            (sessionStorage.gh_password != "")) {
+            Gh3.username=localStorage.gh_username
+            Gh3.password=sessionStorage.gh_password
+            showLogin();
+        }
+    } else {
+        alert("Sorry, your browser does not support the local storage necessary for this page to work.");
+    }
+}
+</script>
+</head>
+<body class="wrap wider" onload="load()">
+
+    <div class="grid">
+        <div id="login" class="unit half"></div>
+    </div>
+
+    <div class="grid">
+        <div id="title" class="title unit whole">New BCS-T SPR</div>
+    </div>
+
+    <div class="grid">
+
+        <div class="unit whole">
+
+            <form action="javascript:createSpr()">
+                <table class="input">
+                    <tr>
+                        <td>Summary:</td>
+                        <td><input id="summary" name="summary" size="60" placeholder="Summary" autofocus /></td>
+                    </tr>
+                    <tr>
+                        <td>Description (Problem/Enhancement):</td>
+                        <td><textarea id="description" name="description" rows="12" cols="60" placeholder="Description"></textarea></td>
+                    </tr>
+                    <tr>
+                        <td>Categories:</td>
+                        <td>
+                            <div>
+                                <input type="checkbox" id="safety" name="safety">
+                                <label for="safety">Affects Safety of Flight</label>
+                            </div>
+
+                            <div>
+                                <input type="checkbox" id="training" name="training">
+                                <label for="training">Impacts Training</label>
+                            </div>
+
+                            <div>
+                                <input type="checkbox" id="workaround" name="workaround">
+                                <label for="workaround">Workaround identified and sufficient</label>
+                            </div>
+
+                            <div>
+                                <input type="checkbox" id="priority" name="priority">
+                                <label for="priority">Priority</label>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><input type="submit" value="Create"/></td>
+                    </tr>
+                </table>
+            </form>
+
+        </div>
+
+    </div> <!--grid-->
+
+</body>
+</html>
